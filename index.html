@@ -1,1 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The New Valdoria | Cloud Edition</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --card: #111111;
+            --accent: #3b82f6;
+            --text: #ffffff;
+            --border: #222;
+        }
+
+        body { margin: 0; font-family: 'Arial', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+        /* NAVBAR */
+        .navbar { display: flex; justify-content: space-around; align-items: center; padding: 20px; background: rgba(0,0,0,0.9); border-bottom: 1px solid var(--border); position: fixed; width: 100%; top: 0; z-index: 100; }
+        .nav-links span { cursor: pointer; margin: 0 10px; font-weight: bold; text-transform: uppercase; font-size: 12px; color: #bbb; transition: 0.3s; }
+        .nav-links span:hover { color: var(--accent); }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .wallet { color: #f1c40f; font-weight: bold; border: 1px solid #f1c40f; padding: 5px 15px; border-radius: 20px; font-size: 13px; }
+        .logout-btn { color: #ff4757 !important; border: 1px solid #ff4757; padding: 5px 10px; border-radius: 5px; cursor: pointer; display: none; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+
+        /* HERO SECTION SANS STATS */
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('https://nationsglory.fr/assets/img/background.jpg'); background-size: cover; }
+        .hero h1 { font-size: 4rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .hero p { color: #aaa; margin-bottom: 30px; max-width: 600px; font-size: 1.1rem; }
+
+        /* PAGES & CARDS */
+        .page { display: none; padding: 140px 20px 60px; min-height: 100vh; max-width: 1100px; margin: auto; }
+        .active { display: block; animation: fadeIn 0.5s ease; }
+        .card { background: var(--card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+        /* BUTTONS & FORMS */
+        .btn { padding: 15px 30px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; text-transform: uppercase; }
+        .btn-main { background: var(--accent); color: white; }
+        .btn-sec { background: rgba(255,255,255,0.05); color: white; border: 1px solid #444; }
+        input, select { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid var(--border); color: white; border-radius: 6px; box-sizing: border-box; }
+
+        /* ADMIN TABLE */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid var(--border); padding: 12px; text-align: left; font-size: 14px; }
+        th { background: #1a1a1a; color: var(--accent); }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <b style="font-size: 1.4rem; color: white; cursor:pointer" onclick="showPage('home')">VALDORIA</b>
+        <div class="nav-links">
+            <span onclick="showPage('home')">Accueil</span>
+            <span onclick="showPage('shop')">Boutique</span>
+            <span onclick="showPage('login')" id="nav-login-btn">Mon Compte</span>
+            <span id="admin-link" style="display:none; color:#ff4757" onclick="showPage('admin')">🛡️ Admin</span>
+        </div>
+        <div class="user-info">
+            <div class="wallet"><span id="display-name">Invité</span> : <span id="display-bal">0.00</span>€</div>
+            <span class="logout-btn" id="logout-btn" onclick="logout()">Déconnexion</span>
+        </div>
+    </nav>
+
+    <div id="home" class="page active" style="padding:0; max-width: 100%;">
+        <section class="hero">
+            <h1>The New Valdoria</h1>
+            <p>Le serveur RP Nation synchronisé. Bâtissez votre empire et retrouvez vos données sur tous vos appareils.</p>
+            <div>
+                <button class="btn btn-main" onclick="alert('IP: play.valdoria.fr')">Rejoindre</button>
+                <button class="btn btn-sec" onclick="showPage('shop')">Boutique</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="shop" class="page">
+        <h1 style="text-align:center;">Boutique Officielle</h1>
+        <div class="grid">
+            <div class="card">
+                <h3>Box Citoyen</h3>
+                <p style="color:#f1c40f; font-size:1.5rem; font-weight:bold;">2.00€</p>
+                <button class="btn btn-main" onclick="buy(2, 'Box Citoyen')">Acheter</button>
+            </div>
+            <div class="card">
+                <h3>Box Guerrier</h3>
+                <p style="color:#f1c40f; font-size:1.5rem; font-weight:bold;">5.00€</p>
+                <button class="btn btn-main" onclick="buy(5, 'Box Guerrier')">Acheter</button>
+            </div>
+            <div class="card">
+                <h3>Box Impériale</h3>
+                <p style="color:#f1c40f; font-size:1.5rem; font-weight:bold;">15.00€</p>
+                <button class="btn btn-main" onclick="buy(15, 'Box Impériale')">Acheter</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="login" class="page">
+        <div class="card" style="max-width:400px; margin:auto;">
+            <h2 id="auth-title">Connexion</h2>
+            <input type="text" id="auth-u" placeholder="Pseudo Minecraft">
+            <input type="password" id="auth-p" placeholder="Mot de passe">
+            <button class="btn btn-main" style="width:100%; margin-top:10px;" onclick="handleAuth()">Valider</button>
+            <p id="toggle-auth" style="cursor:pointer; font-size:12px; color:#888; margin-top:15px;" onclick="toggleAuth()">Pas de compte ? Créer un profil</p>
+        </div>
+    </div>
+
+    <div id="admin" class="page">
+        <div class="card" style="text-align:left;">
+            <h2 style="color:var(--accent)">🛡️ Panel Administrateur Cloud</h2>
+            <p style="font-size:13px; color:#888;">Gestion en temps réel de tous les joueurs de Valdoria.</p>
+            <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+            
+            <h3>Créditer un compte</h3>
+            <select id="admin-target"><option value="">-- Sélectionner un joueur --</option></select>
+            <input type="number" id="admin-amount" placeholder="Montant en €">
+            <button class="btn btn-main" onclick="adminGiveMoney()">Ajouter le solde</button>
+
+            <h3 style="margin-top:40px;">Liste des comptes enregistrés</h3>
+            <table>
+                <thead><tr><th>Pseudo</th><th>Mot de passe</th><th>Solde (€)</th></tr></thead>
+                <tbody id="admin-user-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDRnVA8Ah-3ecfve072_pND1-vVwL4AkUk",
+            authDomain: "portail-officiel.firebaseapp.com",
+            projectId: "portail-officiel",
+            storageBucket: "portail-officiel.firebasestorage.app",
+            messagingSenderId: "956387803684",
+            appId: "1:956387803684:web:9cdf703bb232fc206a4eb1"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const WEBHOOK = "https://discord.com/api/webhooks/1483868158950506737/Z99tQvCDn7QtNQLdRLj672gZIK0av16gBYz6qP4l-DKh0iT5PnuryiUqddyflEfUQXGh";
+
+        let currentUser = null;
+        let authMode = "login";
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function toggleAuth() {
+            authMode = (authMode === "login") ? "signup" : "login";
+            document.getElementById('auth-title').innerText = (authMode === "login") ? "Connexion" : "Inscription";
+            document.getElementById('toggle-auth').innerText = (authMode === "login") ? "Pas de compte ? Créer un profil" : "Déjà un compte ? Se connecter";
+        }
+
+        async function handleAuth() {
+            const u = document.getElementById('auth-u').value.trim();
+            const p = document.getElementById('auth-p').value.trim();
+            if(!u || !p) return alert("Champs vides !");
+
+            // Connexion Admin
+            if(u === "admin" && p === "743474") {
+                currentUser = { u: "admin", balance: 0 };
+                updateUI();
+                showPage('admin');
+                return;
+            }
+
+            const userRef = db.collection("users").doc(u);
+            const doc = await userRef.get();
+
+            if(authMode === "login") {
+                if(doc.exists && doc.data().p === p) {
+                    currentUser = { u: u, ...doc.data() };
+                    alert("Content de vous revoir !");
+                    showPage('home');
+                } else { alert("Identifiants incorrects."); }
+            } else {
+                if(doc.exists) return alert("Ce pseudo est déjà utilisé.");
+                await userRef.set({ p: p, balance: 0 });
+                sendDiscord("🆕 Inscription", `Le joueur **${u}** vient de rejoindre le cloud.`);
+                alert("Compte créé avec succès !");
+                toggleAuth();
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            if(currentUser) {
+                document.getElementById('display-name').innerText = currentUser.u;
+                document.getElementById('display-bal').innerText = currentUser.balance.toFixed(2);
+                document.getElementById('logout-btn').style.display = "inline";
+                document.getElementById('nav-login-btn').style.display = "none";
+                if(currentUser.u === "admin") document.getElementById('admin-link').style.display = "inline";
+            } else {
+                document.getElementById('display-name').innerText = "Invité";
+                document.getElementById('display-bal').innerText = "0.00";
+                document.getElementById('logout-btn').style.display = "none";
+                document.getElementById('nav-login-btn').style.display = "inline";
+                document.getElementById('admin-link').style.display = "none";
+            }
+            refreshAdminData();
+        }
+
+        async function refreshAdminData() {
+            const snapshot = await db.collection("users").get();
+            const list = document.getElementById('admin-user-list');
+            const select = document.getElementById('admin-target');
+            list.innerHTML = "";
+            select.innerHTML = '<option value="">-- Sélectionner un joueur --</option>';
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                list.innerHTML += `<tr><td>${doc.id}</td><td>${data.p}</td><td>${data.balance.toFixed(2)}</td></tr>`;
+                select.innerHTML += `<option value="${doc.id}">${doc.id}</option>`;
+            });
+        }
+
+        async function adminGiveMoney() {
+            const target = document.getElementById('admin-target').value;
+            const amt = parseFloat(document.getElementById('admin-amount').value);
+            if(!target || isNaN(amt)) return;
+
+            const ref = db.collection("users").doc(target);
+            const doc = await ref.get();
+            await ref.update({ balance: doc.data().balance + amt });
+            alert(`Argent envoyé à ${target} !`);
+            refreshAdminData();
+        }
+
+        async function buy(price, name) {
+            if(!currentUser || currentUser.u === "admin") return alert("Veuillez vous connecter avec un compte joueur.");
+            
+            const ref = db.collection("users").doc(currentUser.u);
+            const doc = await ref.get();
+            let currentBal = doc.data().balance;
+
+            if(currentBal >= price) {
+                await ref.update({ balance: currentBal - price });
+                currentUser.balance = currentBal - price;
+                updateUI();
+                sendDiscord("🛒 Achat", `**${currentUser.u}** a acheté **${name}** (${price}€)`);
+                alert("Merci pour votre achat !");
+            } else { alert("Solde insuffisant."); }
+        }
+
+        function logout() { location.reload(); }
+
+        function sendDiscord(title, msg) {
+            fetch(WEBHOOK, { method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ embeds: [{ title: title, description: msg, color: 3447003, timestamp: new Date() }] })
+            });
+        }
+
+        // Chargement initial
+        updateUI();
+    </script>
+</body>
+</html>
